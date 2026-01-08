@@ -1,4 +1,36 @@
 # Slack MCP Server
+
+### APIキーを最短で作成する手順
+
+1. [slackアプリ管理画面](https://api.slack.com/apps) に行く
+1. **Create New App** から、以下のmanifestのJSONを使って作成する
+  ```json
+  {
+      "display_information": {
+          "name": "自由な名前"
+      },
+      "oauth_config": {
+          "scopes": {
+              "user": [
+                  "channels:read",
+                  "channels:history",
+                  "users:read",
+                  "search:read"
+              ]
+          }
+      },
+      "settings": {
+          "org_deploy_enabled": false,
+          "socket_mode_enabled": false,
+          "token_rotation_enabled": false
+      }
+  }
+  ```
+1. 左の `Settings > Install App` からワークスペースにアプリをインストールする
+1. `xoxp-` から始まるAPIキーが表示されていれば成功
+
+---
+
 [![Trust Score](https://archestra.ai/mcp-catalog/api/badge/quality/korotovsky/slack-mcp-server)](https://archestra.ai/mcp-catalog/korotovsky__slack-mcp-server)
 
 Model Context Protocol (MCP) server for Slack Workspaces. The most powerful MCP Slack server — supports Stdio and SSE transports, proxy settings, DMs, Group DMs, Smart History fetch (by date or count), may work via OAuth or in complete stealth mode with no permissions and scopes in Workspace 😏.
