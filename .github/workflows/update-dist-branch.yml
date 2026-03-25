@@ -19,23 +19,12 @@ jobs:
           # Create a temporary directory to store dist files
           mkdir -p /tmp/dist-backup/bin
 
-          # Copy the npm wrapper package files
+          # Copy the npm wrapper package files as-is from master
           cp npm/slack-mcp-server/package.json /tmp/dist-backup/package.json
           cp npm/slack-mcp-server/bin/index.js /tmp/dist-backup/bin/index.js
 
-          # Fetch the latest version from npm registry
-          LATEST_VERSION=$(npm view slack-mcp-server version)
-          echo "Latest npm version: $LATEST_VERSION"
-
-          # Update version and optionalDependencies in package.json to the latest
-          cd /tmp/dist-backup
-          jq --arg v "$LATEST_VERSION" '
-            .version = $v |
-            .optionalDependencies |= with_entries(.value = $v)
-          ' package.json > package.json.tmp && mv package.json.tmp package.json
-
-          echo "Updated package.json:"
-          cat package.json
+          echo "package.json:"
+          cat /tmp/dist-backup/package.json
 
       - name: Configure Git
         run: |
