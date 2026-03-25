@@ -1,0 +1,84 @@
+name: Update Dist Branch
+
+on:
+  push:
+    branches: [master]
+
+jobs:
+  update-dist:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout master branch
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Prepare dist files
+        run: |
+          # Create a temporary directory to store dist files
+          mkdir -p /tmp/dist-backup/bin
+
+          # Copy the npm wrapper package files
+          cp npm/slack-mcp-server/package.json /tmp/dist-backup/package.json
+          cp npm/slack-mcp-server/bin/index.js /tmp/dist-backup/bin/index.js
+
+          # Fetch the latest version from npm registry
+          LATEST_VERSION=$(npm view slack-mcp-server version)
+          echo "Latest npm version: $LATEST_VERSION"
+
+          # Update version and optionalDependencies in package.json to the latest
+          cd /tmp/dist-backup
+          jq --arg v "$LATEST_VERSION" '
+            .version = $v |
+            .optionalDependencies |= with_entries(.value = $v)
+          ' package.json > package.json.tmp && mv package.json.tmp package.json
+
+          echo "Updated package.json:"
+          cat package.json
+
+      - name: Configure Git
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+
+      - name: Switch to dist branch
+        run: |
+          # Fetch all remote branches first
+          git fetch origin
+          # Check if dist branch exists remotely
+          if git show-ref --verify --quiet refs/remotes/origin/dist; then
+            # If remote dist branch exists, check it out
+            git checkout -B dist origin/dist
+          else
+            # If no remote dist branch, create a new orphan branch
+            git checkout --orphan dist
+            git rm -rf .
+          fi
+
+      - name: Update dist branch
+        run: |
+          # Remove old files (keep .git)
+          find . -maxdepth 1 ! -name '.git' ! -name '.' -exec rm -rf {} +
+
+          # Restore the built files from backup
+          cp /tmp/dist-backup/package.json ./package.json
+          mkdir -p bin
+          cp /tmp/dist-backup/bin/index.js ./bin/index.js
+
+          # Copy necessary files from master
+          git checkout master -- README.md
+          git checkout master -- LICENSE || echo "LICENSE file not found, skipping"
+
+          # Stage all changes
+          git add .
+
+      - name: Commit and push changes
+        run: |
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "chore: update dist branch with latest npm wrapper [skip ci]"
+            # Force push to update the dist branch
+            git push origin dist --force
+          fi
