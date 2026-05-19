@@ -14,8 +14,13 @@
               "user": [
                   "channels:read",
                   "channels:history",
+                  "groups:read",
+                  "im:read",
+                  "mpim:read",
                   "users:read",
-                  "search:read"
+                  "search:read",
+                  "chat:write",
+                  "reactions:write"
               ]
           }
       },
@@ -26,6 +31,15 @@
       }
   }
   ```
+
+  スコープの内訳:
+  - `channels:read` / `groups:read` / `im:read` / `mpim:read`: サーバー起動時のチャンネルキャッシュ生成に必須。1つでも欠けるとパブリック/プライベート/DM/グループDMのいずれかで `missing_scope` となり、`API returned zero channels and no existing cache is available` で fatal 終了する
+  - `channels:history`: メッセージ取得（`conversations_history` / `conversations_replies`）
+  - `users:read`: ユーザー情報の取得・キャッシュ
+  - `search:read`: メッセージ検索（`conversations_search_messages`）
+  - `chat:write`: `SLACK_MCP_ADD_MESSAGE_TOOL=true` で `conversations_add_message` を使う場合に必要
+  - `reactions:write`: `SLACK_MCP_REACTION_TOOL=true` で `reactions_add` / `reactions_remove` を使う場合に必要
+
 1. 左の `Settings > Install App` からワークスペースにアプリをインストールする
 1. `xoxp-` から始まるAPIキーが表示されていれば成功
 
